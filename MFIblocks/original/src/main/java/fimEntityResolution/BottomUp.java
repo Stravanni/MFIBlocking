@@ -43,7 +43,6 @@ public class BottomUp {
 	public static String srcFile = null;
 	private static double NG_LIMIT = 3;
 	private static double lastUsedBlockingThreshold;
-	private static MfiContext context;
 
     /**
 	 * The Main of the MFIBlocking Algorithm
@@ -62,8 +61,8 @@ public class BottomUp {
 		10.Size of the first dataset (optional, only for 2 and more dataset files)
 	 */
 	public static void main(String[] args){
-		context = readArguments(args);
-		//StringSimToolsLocal.init(context);
+        MfiContext context = readArguments(args);
+        //StringSimToolsLocal.init(context);
 		enterPerformanceModeIfNeeded( context.isInPerformanceMode() );
 		
 		createSparkContext( context.getConfig() );
@@ -83,8 +82,8 @@ public class BottomUp {
 		//System.out.println("DEBUG: Size of lexicon: " + MemoryUtil.deepMemoryUsageOfAll(Utilities.globalItemsMap.values(), VisibilityFilter.ALL)/Math.pow(2,30) + " GB");
 				
 		start = System.currentTimeMillis();
-		mfiBlocksCore();
-		System.out.println("Total time for algorithm " + (System.currentTimeMillis()-start)/1000.0 + " seconds");	
+        mfiBlocksCore(context);
+        System.out.println("Total time for algorithm " + (System.currentTimeMillis()-start)/1000.0 + " seconds");
 	}
 
 	private static void createSparkContext(MFISetsCheckConfiguration config) {
@@ -149,50 +148,51 @@ public class BottomUp {
 
 	/**
 	 * Core of the MFIBlocks algorithm
-	 */
-	public static void mfiBlocksCore() {
+     * @param mfiContext
+     */
+    public static void mfiBlocksCore(MfiContext mfiContext) {
 
 		int recordsSize = RecordSet.size;
-		System.out.println("order of minsups used: " + Arrays.toString(context.getMinSup()));
-		List<BlockingRunResult> blockingRunResults = new ArrayList<>();
+        System.out.println("order of minsups used: " + Arrays.toString(mfiContext.getMinSup()));
+        List<BlockingRunResult> blockingRunResults = new ArrayList<>();
 		//iterate for each neighborhood grow value that was set in input
-		double[] neighborhoodGrowth = context.getNeighborhoodGrowth();
-		SearchEngine engine = createAndInitSearchEngine(context.getRecordsFile());
-		IComparison comparison = EntityResolutionFactory.createComparison(EntityResulutionComparisonType.Jaccard, engine);
+        double[] neighborhoodGrowth = mfiContext.getNeighborhoodGrowth();
+        SearchEngine engine = createAndInitSearchEngine(mfiContext.getRecordsFile());
+        IComparison comparison = EntityResolutionFactory.createComparison(EntityResulutionComparisonType.Jaccard, engine);
 		for(double neighborhoodGrow: neighborhoodGrowth){
 			NG_LIMIT = neighborhoodGrow;
 
-			double[] minBlockingThresholds = context.getMinBlockingThresholds();
-			for (double minBlockingThreshold : minBlockingThresholds) { // test for each minimum blocking threshold
+            double[] minBlockingThresholds = mfiContext.getMinBlockingThresholds();
+            for (double minBlockingThreshold : minBlockingThresholds) { // test for each minimum blocking threshold
 				coveredRecords = new BitSet(recordsSize+1);
 				coveredRecords.set(0,true); // no such record
-                logger.info("running iterative " + context.getAlgName() + "s with minimum blocking threshold " + minBlockingThreshold +
+                logger.info("running iterative " + mfiContext.getAlgName() + "s with minimum blocking threshold " + minBlockingThreshold +
                         " and NGLimit: " + NG_LIMIT);
-				System.out.println("running iterative " + context.getAlgName() + "s with minimum blocking threshold " + minBlockingThreshold +
-						" and NGLimit: " + NG_LIMIT);
+                System.out.println("running iterative " + mfiContext.getAlgName() + "s with minimum blocking threshold " + minBlockingThreshold +
+                        " and NGLimit: " + NG_LIMIT);
                 Timer timer = new Timer();
                 //obtain all the clusters that has the minimum score
-				CandidatePairs algorithmObtainedPairs = getClustersToUse(context, minBlockingThreshold);
+                CandidatePairs algorithmObtainedPairs = getClustersToUse(mfiContext, minBlockingThreshold);
                 timer.startActionTimeMeassurment();
 
-                List<Block> algorithmBlocks = findBlocks(algorithmObtainedPairs, true, recordsSize);
-                Writer.printNeighborsAndBlocks(algorithmObtainedPairs, context, algorithmBlocks);
-                Map<Integer, List<BlockDescriptor>> blocksAmbiguousRepresentatives = findBlocksAmbiguousRepresentatives(algorithmBlocks, context);
-                Writer.printAmbiguousRepresentatives(blocksAmbiguousRepresentatives, context);
+                List<Block> algorithmBlocks = findBlocks(algorithmObtainedPairs, true, recordsSize, mfiContext);
+                Writer.printNeighborsAndBlocks(algorithmObtainedPairs, mfiContext, algorithmBlocks);
+                Map<Integer, List<BlockDescriptor>> blocksAmbiguousRepresentatives = findBlocksAmbiguousRepresentatives(algorithmBlocks, mfiContext);
+                Writer.printAmbiguousRepresentatives(blocksAmbiguousRepresentatives, mfiContext);
 
                 //Fetching and printing local potential from algorithmBlocks
                 iPotentialService potentialService = new PotentialService();
                 List<BlockPotential> localPotential = potentialService.getLocalPotential(algorithmBlocks);
                 AdjustedMatrix adjustedMatrix = potentialService.getAdjustedMatrix(algorithmBlocks);
 				List<SharedMatrix> sharedMatrices = potentialService.getSharedMatrices(algorithmBlocks);
-				Writer.printBlockPotential(localPotential, adjustedMatrix, sharedMatrices, context);
+                Writer.printBlockPotential(localPotential, adjustedMatrix, sharedMatrices, mfiContext);
                 long writeBlocksDuration = timer.getActionTimeDuration();
 
                 timer.startActionTimeMeassurment();
                 TrueClusters trueClusters = new TrueClusters();
-				trueClusters.findClustersAssingments(context.getMatchFile());
+                trueClusters.findClustersAssingments(mfiContext.getMatchFile());
 
-                List<Block> trueBlocks = findBlocks(trueClusters.getGroundTruthCandidatePairs(), false, recordsSize);
+                List<Block> trueBlocks = findBlocks(trueClusters.getGroundTruthCandidatePairs(), false, recordsSize, mfiContext);
 
                 NonBinaryResults nonBinaryResults = new NonBinaryResults(algorithmBlocks, trueBlocks);
                 ExperimentResult experimentResult = new ExperimentResult(trueClusters, algorithmObtainedPairs, recordsSize);
@@ -237,13 +237,14 @@ public class BottomUp {
      * @param candidatePairs
      * @param isAlgorithmResults - whether or not to calc probabilities on given CandidatePairs
      * @param recordsSize
+     * @param mfiContext
      * @return
      */
-    private static List<Block> findBlocks(CandidatePairs candidatePairs, boolean isAlgorithmResults, int recordsSize) {
+    private static List<Block> findBlocks(CandidatePairs candidatePairs, boolean isAlgorithmResults, int recordsSize, MfiContext mfiContext) {
         iBlockService blockService = new BlockService();
         List<Block> blocks = blockService.getBlocks(candidatePairs, recordsSize);
         if (isAlgorithmResults) {
-            blockService.calcProbOnBlocks(blocks, context);
+            blockService.calcProbOnBlocks(blocks, mfiContext);
         } else {
             blockService.setTrueMatch(blocks);
         }

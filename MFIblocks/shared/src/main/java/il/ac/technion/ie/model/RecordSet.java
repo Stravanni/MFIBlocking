@@ -10,22 +10,32 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 public class RecordSet {
-    public static Map<Integer, MfiRecord> values;
-    public static String[][] originalRecords;
-    public static String[] columnNames;
-    public static int size;
-    public static int minRecordLength = Integer.MAX_VALUE;
-    public static int DB_SIZE;
-    public static int SCHEMA_SIZE;
+    private Map<Integer, MfiRecord> values;
+    private String[][] originalRecords;
+    private String[] columnNames;
+    private int numberOfRecords;
 
+    private int minRecordLength = Integer.MAX_VALUE;
 
-    public static void setRecords(Map<Integer, MfiRecord> records) {
-        values = records;
-        size = values.size();
+    private int SCHEMA_SIZE;
+
+    private RecordSet() {
     }
 
-    public static void loadOriginalRecordsFromCSV(String filename) throws IOException {
-        originalRecords = new String[DB_SIZE][SCHEMA_SIZE];
+    public static RecordSet factory(MfiContext mfiContext) {
+        RecordSet recordSet = new RecordSet();
+        recordSet.readRecords(mfiContext);
+        return recordSet;
+    }
+
+    /*public  void setRecords(Map<Integer, MfiRecord> records) {
+        values = records;
+        numberOfRecords = values.size();
+    }*/
+
+
+    public void loadOriginalRecordsFromCSV(String filename) throws IOException {
+        originalRecords = new String[numberOfRecords][SCHEMA_SIZE];
         CSVReader cvsReader;
 
         cvsReader = new CSVReader(new FileReader(new File(filename)));
@@ -47,12 +57,11 @@ public class RecordSet {
         columnNames = attNames;
     }
 
-    public static void readRecords(MfiContext context) {
-
+    public void readRecords(MfiContext context) {
         String numericRecordsFile = context.getRecordsFile();
         String origRecordsFile = context.getOriginalFile();
         String srcFile = context.getRecordsFile();
-        Map<Integer, MfiRecord> outputRecords = new HashMap<>();
+        values = new HashMap<>();
         try {
             BufferedReader recordsFileReader = new BufferedReader(
                     new FileReader(new File(numericRecordsFile)));
@@ -90,9 +99,8 @@ public class RecordSet {
                             r.addItem(item);
                         }
                     }
-                    minRecordLength = (r.getSize() < minRecordLength) ? r
-                            .getSize() : minRecordLength;
-                    outputRecords.put(r.getId(), r);
+                    minRecordLength = Math.min(r.getSize(), minRecordLength);
+                    values.put(r.getId(), r);
                     recordIndex++;
                 } catch (Exception e) {
                     System.out.println("Exception while reading line " + recordIndex + ":" + numericLine);
@@ -101,14 +109,27 @@ public class RecordSet {
                 }
             }
             recordsFileReader.close();
-            System.out.println("Num of records read: " + outputRecords.size());
-            DB_SIZE = outputRecords.size();
+            System.out.println("Num of records read: " + values.size());
+//            DB_SIZE = values.size();
+            numberOfRecords = values.size();
+
         } catch (IOException e) {
             e.printStackTrace();
         }
-        RecordSet.setRecords(outputRecords);
-        System.out.println("RecordSet.size() " + RecordSet.size);
+//        this.setRecords(values);
+        System.out.println("number Of Records is: " + numberOfRecords);
+    }
+
+    public int getNumberOfRecords() {
+        return numberOfRecords;
     }
 
 
+    public MfiRecord getRecordByKey(int index) {
+        return this.values.get(index);
+    }
+
+    public int getMinRecordLength() {
+        return minRecordLength;
+    }
 }

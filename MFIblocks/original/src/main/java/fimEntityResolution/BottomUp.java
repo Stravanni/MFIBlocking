@@ -68,19 +68,18 @@ public class BottomUp {
 		createSparkContext( context.getConfig() );
 
         logProgress("Working dir: " + new File(".").getAbsolutePath());
-        logProgress("args.length : " + args.length);
-        logProgress("Main srcFile : " + srcFile);
+        logProgress("args.length: " + args.length);
+        logProgress("Main srcFile: " + srcFile);
         long start = System.currentTimeMillis();
-		RecordSet.readRecords(context);
-		int numOfRecords = RecordSet.DB_SIZE;
-		System.out.println("After reading records numOfRecords=" + numOfRecords);
+        RecordSet recordSet = RecordSet.factory(context);
+        context.setRecordSet(recordSet);
+        int numOfRecords = recordSet.getNumberOfRecords();
+        System.out.println("After reading records numOfRecords=" + numOfRecords);
 		System.out.println("Time to read records " + (System.currentTimeMillis()-start)/1000.0 + " seconds");
-		//System.out.println("DEBUG: Size of records: " + MemoryUtil.deepMemoryUsageOfAll(RecordSet.values.values(), VisibilityFilter.ALL)/Math.pow(2,30) + " GB");
 		start = System.currentTimeMillis();
-		Utilities.parseLexiconFile(context.getLexiconFile(),context.getPrntFormat());
-		System.out.println("Time to read items (lexicon) " + (System.currentTimeMillis()-start)/1000.0 + " seconds");
-		//System.out.println("DEBUG: Size of lexicon: " + MemoryUtil.deepMemoryUsageOfAll(Utilities.globalItemsMap.values(), VisibilityFilter.ALL)/Math.pow(2,30) + " GB");
-				
+        Utilities.parseLexiconFile(context.getLexiconFile(), context.getPrntFormat());
+        System.out.println("Time to read items (lexicon) " + (System.currentTimeMillis()-start)/1000.0 + " seconds");
+
 		start = System.currentTimeMillis();
         mfiBlocksCore(context);
         System.out.println("Total time for algorithm " + (System.currentTimeMillis()-start)/1000.0 + " seconds");
@@ -152,7 +151,7 @@ public class BottomUp {
      */
     public static void mfiBlocksCore(MfiContext mfiContext) {
 
-		int recordsSize = RecordSet.size;
+        int recordsSize = mfiContext.getRecordsSize();
         System.out.println("order of minsups used: " + Arrays.toString(mfiContext.getMinSup()));
         List<BlockingRunResult> blockingRunResults = new ArrayList<>();
 		//iterate for each neighborhood grow value that was set in input
@@ -164,8 +163,8 @@ public class BottomUp {
 
             double[] minBlockingThresholds = mfiContext.getMinBlockingThresholds();
             for (double minBlockingThreshold : minBlockingThresholds) { // test for each minimum blocking threshold
-				coveredRecords = new BitSet(recordsSize+1);
-				coveredRecords.set(0,true); // no such record
+                coveredRecords = new BitSet(recordsSize + 1);
+                coveredRecords.set(0,true); // no such record
                 logger.info("running iterative " + mfiContext.getAlgName() + "s with minimum blocking threshold " + minBlockingThreshold +
                         " and NGLimit: " + NG_LIMIT);
                 System.out.println("running iterative " + mfiContext.getAlgName() + "s with minimum blocking threshold " + minBlockingThreshold +
@@ -175,7 +174,7 @@ public class BottomUp {
                 CandidatePairs algorithmObtainedPairs = getClustersToUse(mfiContext, minBlockingThreshold);
                 timer.startActionTimeMeassurment();
 
-                List<Block> algorithmBlocks = findBlocks(algorithmObtainedPairs, true, recordsSize, mfiContext);
+                List<Block> algorithmBlocks = findBlocks(algorithmObtainedPairs, true, mfiContext);
                 Writer.printNeighborsAndBlocks(algorithmObtainedPairs, mfiContext, algorithmBlocks);
                 Map<Integer, List<BlockDescriptor>> blocksAmbiguousRepresentatives = findBlocksAmbiguousRepresentatives(algorithmBlocks, mfiContext);
                 Writer.printAmbiguousRepresentatives(blocksAmbiguousRepresentatives, mfiContext);
@@ -192,7 +191,7 @@ public class BottomUp {
                 TrueClusters trueClusters = new TrueClusters();
                 trueClusters.findClustersAssingments(mfiContext.getMatchFile());
 
-                List<Block> trueBlocks = findBlocks(trueClusters.getGroundTruthCandidatePairs(), false, recordsSize, mfiContext);
+                List<Block> trueBlocks = findBlocks(trueClusters.getGroundTruthCandidatePairs(), false, mfiContext);
 
                 NonBinaryResults nonBinaryResults = new NonBinaryResults(algorithmBlocks, trueBlocks);
                 ExperimentResult experimentResult = new ExperimentResult(trueClusters, algorithmObtainedPairs, recordsSize);
@@ -236,13 +235,12 @@ public class BottomUp {
      *
      * @param candidatePairs
      * @param isAlgorithmResults - whether or not to calc probabilities on given CandidatePairs
-     * @param recordsSize
      * @param mfiContext
      * @return
      */
-    private static List<Block> findBlocks(CandidatePairs candidatePairs, boolean isAlgorithmResults, int recordsSize, MfiContext mfiContext) {
+    private static List<Block> findBlocks(CandidatePairs candidatePairs, boolean isAlgorithmResults, MfiContext mfiContext) {
         iBlockService blockService = new BlockService();
-        List<Block> blocks = blockService.getBlocks(candidatePairs, recordsSize);
+        List<Block> blocks = blockService.getBlocks(candidatePairs, mfiContext.getRecordsSize());
         if (isAlgorithmResults) {
             blockService.calcProbOnBlocks(blocks, mfiContext);
         } else {
@@ -305,14 +303,14 @@ public class BottomUp {
 		
 		CandidatePairs allResults = new CandidatePairs(); //unlimited
 
-        for (int i = (minimumSupports.length - 1); i >= 0 && coveredRecords.cardinality() < RecordSet.size; i--) {
+        for (int i = (minimumSupports.length - 1); i >= 0 && coveredRecords.cardinality() < context.getRecordsSize(); i--) {
             /*
 		        array is sorted in ascending order begin with largest minSup
 		        continue until all records have been covered OR we have completed running over all minSups
 		     */
 			long start = System.currentTimeMillis();
 			//TODO: check content of file
-			File uncoveredRecordsFile = createRecordFileFromRecords(coveredRecords, minimumSupports[i]);
+            File uncoveredRecordsFile = createRecordFileFromRecords(coveredRecords, minimumSupports[i], context);
             logProgress("Time to createRecordFileFromRecords" + Double.toString((double) (System.currentTimeMillis() - start) / 1000.0));
 
 			start = System.currentTimeMillis();
@@ -320,7 +318,7 @@ public class BottomUp {
 			/*File mfiFile = Utilities.RunPFPGrowth(minimumSupports[i],
 						RecordSet.size-coveredRecords.cardinality(),uncoveredRecordsFile.getAbsolutePath(), mfiDir);*/
             logProgress("Time to run MFI with minsup=" + minimumSupports[i] +
-                    " on table of size " + (RecordSet.size - coveredRecords.cardinality()) +
+                    " on table of size " + (context.getRecordsSize() - coveredRecords.cardinality()) +
                     " is " + Double.toString((double) (System.currentTimeMillis() - start) / 1000.0));
 		
 			start = System.currentTimeMillis();
@@ -347,19 +345,19 @@ public class BottomUp {
             logProgress("lastUsedBlockingThreshold: " + lastUsedBlockingThreshold);
 
             logProgress("Number of covered records after running with Minsup=" +
-                    minimumSupports[i] + " is " + coveredRecords.cardinality() + " out of " + RecordSet.size);
-			
-		}
+                    minimumSupports[i] + " is " + coveredRecords.cardinality() + " out of " + context.getRecordsSize());
+
+        }
 
         logProgress("Minsups used " + Arrays.toString(minimumSupports));
         logProgress("Total number of covered records under minimum blocking threshold " + minBlockingThreshold +
-                " and minsups " + Arrays.toString(minimumSupports) + " is: " + coveredRecords.cardinality() + " out of " + RecordSet.size +
-                " which are: " + 100 * (coveredRecords.cardinality() / RecordSet.size) + "%");
+                " and minsups " + Arrays.toString(minimumSupports) + " is: " + coveredRecords.cardinality() + " out of " + context.getRecordsSize() +
+                " which are: " + 100 * (coveredRecords.cardinality() / context.getRecordsSize()) + "%");
 
         logProgress("After adding uncovered records: Total number of covered records under blocking threshold " + minBlockingThreshold +
-                " and minsups " + Arrays.toString(minimumSupports) + " is: " + coveredRecords.cardinality() + " out of " + RecordSet.size +
-                " which are: " + 100 * (coveredRecords.cardinality() / RecordSet.size) + "%");
-		int firstDbSize = context.getFirstDbSize();
+                " and minsups " + Arrays.toString(minimumSupports) + " is: " + coveredRecords.cardinality() + " out of " + context.getRecordsSize() +
+                " which are: " + 100 * (coveredRecords.cardinality() / context.getRecordsSize()) + "%");
+        int firstDbSize = context.getFirstDbSize();
 		if (firstDbSize>0) {
 			allResults=removePairsSameSet(allResults,firstDbSize);
 		}
@@ -411,9 +409,9 @@ public class BottomUp {
 	private static void updateCoveredRecords(BitSet coveredRecords, BitSet coveredRows){
 		coveredRecords.or(coveredRows);
 	}
-	
-	private static File createRecordFileFromRecords(BitSet coveredRecords, int minSup){		
-		File outputFle = null;
+
+    private static File createRecordFileFromRecords(BitSet coveredRecords, int minSup, final MfiContext context) {
+        File outputFle = null;
 		System.out.println("Directory TempDir= " + TempDir + " TempDir.getAbsolutePath()" + TempDir.getAbsolutePath());
 		try {
 			if(!TempDir.exists()){
@@ -430,18 +428,19 @@ public class BottomUp {
 		if(outputFle.exists()){
 			System.out.println("File " + outputFle.getAbsolutePath() + " exists right after deleteOnExit");
 		}
-		
-		Map<Integer,Integer> appItems = appitems(coveredRecords, minSup);
-		
-		BufferedWriter writer = null;
+
+        Map<Integer, Integer> appItems = appitems(coveredRecords, minSup, context);
+
+        BufferedWriter writer = null;
 		int numOfWrittenLines=0;
 		try {
 			outputFle.delete();
 			outputFle.createNewFile();
 			writer = new BufferedWriter(new FileWriter(outputFle));
-			
-			for(int i=coveredRecords.nextClearBit(0); i>=0 && i <= RecordSet.size ; i=coveredRecords.nextClearBit(i+1)){
-                MfiRecord currMfiRecord = RecordSet.values.get(i);
+
+            for (int i = coveredRecords.nextClearBit(0); i >= 0 && i <= context.getRecordsSize(); i = coveredRecords.nextClearBit(i + 1)) {
+                ;
+                MfiRecord currMfiRecord = context.getRecordByKey(i);
                 String toWrite = currMfiRecord.getNumericline(appItems.keySet());
                 writer.write(toWrite);
 				writer.newLine();
@@ -461,11 +460,11 @@ public class BottomUp {
 		}
 		return outputFle;			
 	}
-	
-	private static Map<Integer,Integer> appitems(BitSet coveredRecords, int minSup){
-		Map<Integer,Integer> retVal = new HashMap<>();
-		for( int i=coveredRecords.nextClearBit(0); i>=0 && i <= RecordSet.size ; i=coveredRecords.nextClearBit(i+1) ){
-            MfiRecord currMfiRecord = RecordSet.values.get(i);
+
+    private static Map<Integer, Integer> appitems(BitSet coveredRecords, int minSup, final MfiContext context) {
+        Map<Integer,Integer> retVal = new HashMap<>();
+        for (int i = coveredRecords.nextClearBit(0); i >= 0 && i <= context.getRecordsSize(); i = coveredRecords.nextClearBit(i + 1)) {
+            MfiRecord currMfiRecord = context.getRecordByKey(i);
             Set<Integer> recordItems = currMfiRecord.getItemsToFrequency().keySet();
             for (Integer recorditem : recordItems) {
 				int itemSuppSize = 1;
@@ -477,8 +476,8 @@ public class BottomUp {
 		}
 		int origSize =  retVal.size();
 		System.out.println("Number of items before pruning too frequent items: " + origSize);
-		double DBSize = RecordSet.size - coveredRecords.cardinality();
-		if(DBSize > 10000){			
+        double DBSize = context.getRecordsSize() - coveredRecords.cardinality();
+        if(DBSize > 10000){
 			double removal = ((double)minSup)*DBSize*MAX_SUPP_CONST;
 			Iterator<Entry<Integer,Integer>> retValIterator = retVal.entrySet().iterator();
 			while(retValIterator.hasNext()){
@@ -495,7 +494,6 @@ public class BottomUp {
 	
 	private static void updateCandidatePairs(CandidatePairs allResults, final CandidatePairs coveragePairs){	
 		allResults.addAll(coveragePairs);
-		
 	}
 
     public static String writeBlockingRR(Collection<BlockingRunResult> runResults){

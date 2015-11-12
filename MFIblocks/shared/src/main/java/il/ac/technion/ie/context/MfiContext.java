@@ -1,6 +1,8 @@
 package il.ac.technion.ie.context;
 
 
+import il.ac.technion.ie.model.MfiRecord;
+import il.ac.technion.ie.model.RecordSet;
 import il.ac.technion.ie.types.Alg;
 import il.ac.technion.ie.types.MFISetsCheckConfiguration;
 import org.apache.commons.lang3.StringUtils;
@@ -24,6 +26,7 @@ public class MfiContext {
 	private String printFormat;
 	private String originalRecordsPath;
     private String datasetName;
+    private RecordSet recordSet;
 
     public MfiContext() {
         this.firstDbSize = 0;
@@ -195,4 +198,24 @@ public class MfiContext {
     public void setDatasetName(String datasetName) {
         this.datasetName = datasetName;
     }
+
+    public void setRecordSet(RecordSet recordSet) {
+        this.recordSet = recordSet;
+    }
+
+    public int getRecordsSize() {
+        return recordSet.getNumberOfRecords();
+    }
+
+    public MfiRecord getRecordByKey(int key) {
+        return recordSet.getRecordByKey(key);
+    }
+
+    public int getMinRecordSize() {
+        return recordSet.getMinRecordLength();
+    }
+
+    /*public RecordSet getRecordSet() {
+        return recordSet;
+    }*/
 }

@@ -127,8 +127,8 @@ public class BottomUp {
      * @return
      */
     private static MfiContext readArguments(String[] args) {
-		MfiContext context = new MfiContext();
-		context.setConfiguration(args[0]);
+        MfiContext context = MfiContext.getInstance();
+        context.setConfiguration(args[0]);
 		context.setLexiconFile(args[1]);
 		context.setRecordsFile(args[2]);
 		context.setMinBlockingThresholds(args[3]);

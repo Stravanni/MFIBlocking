@@ -11,24 +11,32 @@ import java.util.Arrays;
 
 
 public class MfiContext {
-	
-	private double[] minBlockingThresholds;
-	private int[] minSup;
+
+    private static MfiContext instance = null;
+    private double[] minBlockingThresholds;
+    private int[] minSup;
 	private double[] neighborhoodGrowth;
-	private MFISetsCheckConfiguration configuration;
-	private String matchFile;
-	private Alg alg;
-	private String lexiconFile;
-	private String recordsFile;
+    private MFISetsCheckConfiguration configuration;
+    private String matchFile;
+    private Alg alg;
+    private String lexiconFile;
+    private String recordsFile;
     private String origRecordsFileWithoutCommas;
     private boolean inPerformanceMode;
-	private int firstDbSize;
-	private String printFormat;
-	private String originalRecordsPath;
+    private int firstDbSize;
+    private String printFormat;
+    private String originalRecordsPath;
     private String datasetName;
     private RecordSet recordSet;
 
-    public MfiContext() {
+    public static MfiContext getInstance() {
+        if (instance == null) {
+            instance = new MfiContext();
+        }
+        return instance;
+    }
+
+    private MfiContext() {
         this.firstDbSize = 0;
         this.configuration = MFISetsCheckConfiguration.DEFAULT;
     }

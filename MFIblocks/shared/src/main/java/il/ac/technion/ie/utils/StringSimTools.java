@@ -1,8 +1,8 @@
 package il.ac.technion.ie.utils;
 
+import il.ac.technion.ie.context.MfiContext;
 import il.ac.technion.ie.data.structure.IFRecord;
 import il.ac.technion.ie.model.MfiRecord;
-import il.ac.technion.ie.model.RecordSet;
 import uk.ac.shef.wit.simmetrics.similaritymetrics.JaroWinkler;
 
 import java.util.*;
@@ -22,16 +22,16 @@ public class StringSimTools {
         //first place all common items in the close words set
 		//because clearly these items are identical and thus close
 		Set<Integer> closeWords = getCommonItems(S,T);
-		
-		Set<Integer> unCommonValues_S = new HashSet<Integer>();
-		for (Integer item : S.getItemsToFrequency().keySet()) {
+
+        Set<Integer> unCommonValues_S = new HashSet<>();
+        for (Integer item : S.getItemsToFrequency().keySet()) {
 			if(!closeWords.contains(item)){
 				unCommonValues_S.add(item);
 			}
 		}
-		
-		Set<Integer> unCommonValues_T = new HashSet<Integer>();
-		for (Integer item : T.getItemsToFrequency().keySet()) {
+
+        Set<Integer> unCommonValues_T = new HashSet<>();
+        for (Integer item : T.getItemsToFrequency().keySet()) {
 			if(!closeWords.contains(item)){
 				unCommonValues_T.add(item);
 			}
@@ -54,28 +54,28 @@ public class StringSimTools {
 		if(commonItems == null){
 			commonItems = getCommonItems(records);
 		}
-		Map<Integer,Double> closeWords = new HashMap<Integer, Double>();
-		for (Integer item : commonItems) {
+        Map<Integer, Double> closeWords = new HashMap<>();
+        for (Integer item : commonItems) {
 			closeWords.put(item,1.0);
 		}
 		
 		//select a record at random - hopefully this will contain uncommon items
 		//approximately similar to items in the rest of the records
 		IFRecord theRecord = records.get(0);
-		
-		Set<Integer> recordUncommonItems = new  HashSet<Integer>(theRecord.getItemsToFrequency().keySet());		
-		recordUncommonItems.removeAll(closeWords.keySet());
+
+        Set<Integer> recordUncommonItems = new HashSet<>(theRecord.getItemsToFrequency().keySet());
+        recordUncommonItems.removeAll(closeWords.keySet());
 		records.remove(theRecord); //should be compared only against the other record, obviously not to itself
-		
-		HashMap<Integer, Double> uncommonItems = new HashMap<Integer, Double>(recordUncommonItems.size()) ;
-		//now see if new items can be added to the "close items"
+
+        HashMap<Integer, Double> uncommonItems = new HashMap<>(recordUncommonItems.size());
+        //now see if new items can be added to the "close items"
 		for (Integer uncommonItem : recordUncommonItems) {
 			uncommonItems.put(uncommonItem, 0.0); //initialize
 			String unCommonItemWord = Utilities.globalItemsMap.get(uncommonItem).getItem();
 			
 			for (IFRecord record : records) { //in each record locate the most similar item to 'uncommonItem'
-				Set<Integer> currRecorditems = new HashSet<Integer>(record.getItemsToFrequency().keySet());
-				currRecorditems.removeAll(closeWords.keySet()); //no need to run over items already deemed close
+                Set<Integer> currRecorditems = new HashSet<>(record.getItemsToFrequency().keySet());
+                currRecorditems.removeAll(closeWords.keySet()); //no need to run over items already deemed close
 				
 				double bestScore = 0.0;
 				for (Integer item : currRecorditems) {		// find the item in the record that is closest to unCommonItemWord			
@@ -107,9 +107,8 @@ public class StringSimTools {
 	/**
 	 * This method returns a modified record s'. This record contains all tokens in s
 	 * that are "close enough" to some token in string t. 
-	 * @param S
-	 * @param T
-	 */
+     * @param records
+     */
 	private static Map<Integer,Double> getCloseTerms(Collection<IFRecord> records){
 		//first place all common items in the close words set
 		//because clearly these items are identical and thus close
@@ -266,8 +265,8 @@ public class StringSimTools {
 	 * This method returns the score of the word most similar to some word in the provided set.
 	 * If the word appears in the set then 1.0 is returned.
 	 * @param wordId
-	 * @param t
-	 * @return
+     * @param items
+     * @return
 	 */
 	private static double findSimilarityToClosestWord(int wordId, Set<Integer> items){		
 		if(items.contains(wordId)){
@@ -282,22 +281,18 @@ public class StringSimTools {
 		return retVal;
 	}
 	
-	private static double RSJWeight(int wordId){
-		double n_t=(double)Utilities.globalItemsMap.get(wordId).getSupportSize();
-		double N = (double)RecordSet.size;
-		return ((N - n_t + 0.5)/n_t+0.5);
-	}
-	
 	private static double IDF(int wordId){
-		return ((double)RecordSet.size/
-					(double)Utilities.globalItemsMap.get(wordId).getSupportSize());
+        int recordsSize = MfiContext.getInstance().getRecordsSize();
+        return ((double) recordsSize /
+                (double)Utilities.globalItemsMap.get(wordId).getSupportSize());
 	}
 	
 	private static double log2IDF(int wordId){
-		double retVal = Utilities.globalItemsMap.get(wordId).getLog2IDF();
-		if(retVal <=0){
-			retVal = ((double) RecordSet.size/
-					(double)Utilities.globalItemsMap.get(wordId).getSupportSize());
+        int recordsSize = MfiContext.getInstance().getRecordsSize();
+        double retVal = Utilities.globalItemsMap.get(wordId).getLog2IDF();
+        if(retVal <=0){
+            retVal = ((double) recordsSize /
+                    (double)Utilities.globalItemsMap.get(wordId).getSupportSize());
 			return logBase2(retVal);
 		}
 		return retVal;
@@ -364,19 +359,6 @@ public class StringSimTools {
 		records.add(S);
 		records.add(T);
 		return softTFIDF(records,null,1.0);
-	/*	Map<Integer,Double> closeTerms = getCloseTerms3(records);
-	
-		for (Entry<Integer,Double> term : closeTerms.entrySet()) {			
-			nominator += Word_TFIDF(term.getKey(),records)
-								*term.getValue();
-		}
-		Set<Integer> unCommonTerms = getUnionItems(records);
-		unCommonTerms.removeAll(closeTerms.keySet());
-		double denominator = nominator;
-		for (Integer term  : unCommonTerms) {
-			denominator += Word_TFIDF(term,records);
-		}
-		return (nominator/denominator); */
 	}
 	
 	@SuppressWarnings("unused")
@@ -453,9 +435,9 @@ public class StringSimTools {
 		}
 		return (nominator/denominator);
 	}
-	
-	public static double MaxScore(int recordsSize,Collection<Integer> commonItems, int minRecordSize){
-		double nominator = 0;	
+
+    public static double MaxScore(int recordsSize, Collection<Integer> commonItems) {
+        double nominator = 0;
 		double minTermScore = 1000;
 		for (Integer term : commonItems) {
 			double termScore = getTermWeight(term)*logBase2(recordsSize)*log2IDF(term);
@@ -463,31 +445,9 @@ public class StringSimTools {
 				minTermScore = termScore;
 			}
 			nominator += termScore; //"rough - as in - assume term appears only once in a record
-		
 		}
-		
-		
-		double denominator = recordsSize*minRecordSize*minTermScore;	
-		return (nominator/denominator);
+        int minRecordSize = MfiContext.getInstance().getMinRecordSize();
+        double denominator = recordsSize * minRecordSize * minTermScore;
+        return (nominator/denominator);
 	}
-	
-/*	public static double roughSoftTFIDF2(Collection<Record> records){
-		double nominator = 0;
-		//contains common terms as well as terms which are similar to the common terms 
-		HashMap<Integer, Double> closeTerms = getCloseTerms2(records);
-		
-		for (Integer term : closeTerms.keySet()) {			
-			double coeff = closeTerms.get(term);
-			nominator += Word_TFIDF(term,records)
-							*coeff; //if term is common then this will be 1.0
-		}
-		Set<Integer> unCommonTerms = getUnionItems(records);
-		unCommonTerms.removeAll(closeTerms.keySet());
-		double denominator = nominator;
-		for (Integer term  : unCommonTerms) {
-			denominator += Word_TFIDF(term,records);
-		}
-		return (nominator/denominator);
-	}
-	*/
 }

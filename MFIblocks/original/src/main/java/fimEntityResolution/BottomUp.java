@@ -67,13 +67,11 @@ public class BottomUp {
 		enterPerformanceModeIfNeeded( context.isInPerformanceMode() );
 		
 		createSparkContext( context.getConfig() );
-		
-		System.out.println("Entered Main");	
-		String currDir = new File(".").getAbsolutePath();
-		System.out.println("Working dir: " + currDir);	
-		System.out.println("args.length : " + args.length);
-		System.out.println("Main srcFile : " + srcFile);
-		long start = System.currentTimeMillis();
+
+        logProgress("Working dir: " + new File(".").getAbsolutePath());
+        logProgress("args.length : " + args.length);
+        logProgress("Main srcFile : " + srcFile);
+        long start = System.currentTimeMillis();
 		RecordSet.readRecords(context);
 		int numOfRecords = RecordSet.DB_SIZE;
 		System.out.println("After reading records numOfRecords=" + numOfRecords);
@@ -398,13 +396,10 @@ public class BottomUp {
 		for (Entry<Integer,RecordMatches> entry: actualCPs.getAllMatches().entrySet()) { //run over all records
 			for (CandidateMatch cm : entry.getValue().getCandidateMatches()) { //for each record, check out its match
 				if ( 	(entry.getKey()>firstDbSize && cm.getRecordId()>firstDbSize) ||
-						(entry.getKey()<firstDbSize && cm.getRecordId()<firstDbSize)) 
-					continue;
-//				if  (entry.getKey()>firstDbSize || cm.getRecordId()>firstDbSize) //for CDDB experiemtns (also add 500 to the command inputs)
-//					continue;
-				else
-                {
-					updatedPairs.setPair(entry.getKey(), cm.getRecordId(), actualCPs.getMinThresh());
+                        (entry.getKey() < firstDbSize && cm.getRecordId() < firstDbSize)) {
+                    continue;
+                } else {
+                    updatedPairs.setPair(entry.getKey(), cm.getRecordId(), actualCPs.getMinThresh());
                 }
 			}
 		}

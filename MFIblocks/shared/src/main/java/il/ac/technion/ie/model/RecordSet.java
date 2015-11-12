@@ -2,6 +2,7 @@ package il.ac.technion.ie.model;
 
 import au.com.bytecode.opencsv.CSVReader;
 import il.ac.technion.ie.context.MfiContext;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
 import java.util.HashMap;
@@ -27,8 +28,7 @@ public class RecordSet {
         originalRecords = new String[DB_SIZE][SCHEMA_SIZE];
         CSVReader cvsReader;
 
-        cvsReader = new CSVReader(new FileReader(
-                new File(filename)));
+        cvsReader = new CSVReader(new FileReader(new File(filename)));
 
         String[] currLine;
         int recordId = 1;
@@ -42,7 +42,6 @@ public class RecordSet {
             }
             SCHEMA_SIZE = attNames.length;
             originalRecords[recordId - 1] = currLine;
-
             recordId++;
         }
         columnNames = attNames;
@@ -53,16 +52,15 @@ public class RecordSet {
         String numericRecordsFile = context.getRecordsFile();
         String origRecordsFile = context.getOriginalFile();
         String srcFile = context.getRecordsFile();
-        Map<Integer, MfiRecord> outputRecords = new HashMap<Integer, MfiRecord>();
+        Map<Integer, MfiRecord> outputRecords = new HashMap<>();
         try {
             BufferedReader recordsFileReader = new BufferedReader(
                     new FileReader(new File(numericRecordsFile)));
             BufferedReader origRecordsFileReader = new BufferedReader(
                     new FileReader(new File(origRecordsFile)));
             BufferedReader srcFileReader = null;
-            if (srcFile != null && srcFile.length() > 0) {
-                srcFileReader = new BufferedReader(new FileReader(new File(
-                        srcFile)));
+            if (StringUtils.isNotEmpty(srcFile)) {
+                srcFileReader = new BufferedReader(new FileReader(new File(srcFile)));
             }
             System.out.println("readRecords: srcFile = " + srcFile);
 
@@ -97,8 +95,7 @@ public class RecordSet {
                     outputRecords.put(r.getId(), r);
                     recordIndex++;
                 } catch (Exception e) {
-                    System.out.println("Exception while reading line "
-                            + recordIndex + ":" + numericLine);
+                    System.out.println("Exception while reading line " + recordIndex + ":" + numericLine);
                     System.out.println(e);
                     break;
                 }
@@ -107,7 +104,6 @@ public class RecordSet {
             System.out.println("Num of records read: " + outputRecords.size());
             DB_SIZE = outputRecords.size();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         RecordSet.setRecords(outputRecords);

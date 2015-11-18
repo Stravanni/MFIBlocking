@@ -183,20 +183,17 @@ public class Utilities {
 				String itemVal = (String) itemEntry.getValue();
 				Matcher fiMatcher = lexiconPattern.matcher(itemVal);
 				boolean matched = fiMatcher.find();
-				assert matched : "failed to match " + itemVal + " to "
-				+ lexiconItemExpression;
-				if (!matched) {
-					System.out.println("failed to match " + itemVal + " to "
-							+ lexiconItemExpression);
-				}
+                assert matched : "failed to match " + itemVal + " to " + lexiconItemExpression;
+                if (!matched) {
+                    System.out.println("failed to match " + itemVal + " to " + lexiconItemExpression);
+                }
 				String wordVal = fiMatcher.group(1);
 				String weightsStr = fiMatcher.group(2);
-				String supportAsString = fiMatcher.group(3);
-				String[] supportStrings = supportAsString.split(", ");
+                String[] supportStrings = fiMatcher.group(3).split(", ");
 
-				String columnsAsString=null;
-				String[] columnsStrings=null;
-				if (!printBlocksFormat.equalsIgnoreCase("N")){
+                String columnsAsString;
+                String[] columnsStrings = null;
+                if (!printBlocksFormat.equalsIgnoreCase("N")){
 					columnsAsString = fiMatcher.group(4);	//20150129
 					columnsStrings = columnsAsString.split(", "); //20150129
 				}
@@ -204,13 +201,11 @@ public class Utilities {
 				FrequentItem item;
 				if (supportStrings.length > 1) {
 					item = new FrequentItem(Integer.parseInt(itemId), wordVal,
-							Double.parseDouble(weightsStr), EWAH_BitSet_Factory
-							.getInstance());
-				} else {
+                            Double.parseDouble(weightsStr), EWAH_BitSet_Factory.getInstance());
+                } else {
 					item = new FrequentItem(Integer.parseInt(itemId), wordVal,
-							Double.parseDouble(weightsStr), SingleBSFactory
-							.getInstance());
-				}
+                            Double.parseDouble(weightsStr), SingleBSFactory.getInstance());
+                }
 				int[] support = getSortedSupportArr(supportStrings);
 
 				for (int trans : support) {
@@ -223,15 +218,12 @@ public class Utilities {
 					}
 				}
 				if (item.getSupportSize() < support.length) {
-					System.out.println("support size should be "
-							+ support.length + " but it is only "
-							+ item.getSupportSize());
-				}
+                    System.out.println("support size should be " + support.length + " but it is only " + item.getSupportSize());
+                }
 				item.setIDFWeight();
 				globalItemsMap.put(Integer.parseInt(itemId), item);
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -262,7 +254,7 @@ public class Utilities {
 			InputStream stderr = p.getErrorStream();
 			InputStreamReader isr = new InputStreamReader(stderr);
 			BufferedReader br = new BufferedReader(isr);
-			String line = null;
+            String line;
 
 			boolean first = true;
 			while ((line = br.readLine()) != null) {
@@ -362,7 +354,7 @@ public class Utilities {
 
     public static Collection<MfiRecord> getClusterRecords(FrequentItemset fi,
                                                           Map<Integer, MfiRecord> records) {
-        Collection<MfiRecord> retVal = new ArrayList<MfiRecord>();
+        Collection<MfiRecord> retVal = new ArrayList<>();
         BitSet support = fi.getSupport();
 		for (int recordid = support.nextSetBit(0); recordid >= 0; recordid = support
 				.nextSetBit(recordid + 1)) {
@@ -377,8 +369,8 @@ public class Utilities {
 		double NG_PARAM = itemsetContext.getNeighborhoodGrowthLimit();
 		String frequentItemsetFile = itemsetContext.getFrequentItemssetFilePath();
 		int numOfLines = 0;
-		BufferedReader FISReader = null;
-		StringBuilder stringBuilder = new StringBuilder();
+//		BufferedReader bufferedReader = null;
+        StringBuilder stringBuilder = new StringBuilder();
 		double tooLarge = 0;
 		double scorePruned = 0;
 
@@ -393,8 +385,8 @@ public class Utilities {
 		numSet.set(0);
 		time_in_supp_calc.set(0);
         resetAtomicIntegerArr(clusterScores);
-        ConcurrentHashMap<Integer, BitMatrix> coverageIndex = new ConcurrentHashMap<Integer, BitMatrix>(21);
-		int maxSize = (int) Math.floor(minSup*NG_PARAM);
+        ConcurrentHashMap<Integer, BitMatrix> coverageIndex = new ConcurrentHashMap<>(21);
+        int maxSize = (int) Math.floor(minSup*NG_PARAM);
 		CandidatePairs candidatePairs = new CandidatePairs(maxSize);
 		StringSimTools.numOfMFIs.set(0);
 		StringSimTools.numOfRoughMFIs.set(0);
@@ -407,37 +399,34 @@ public class Utilities {
 		Runtime runtime = Runtime.getRuntime();
 		runtime.gc();
         int numOfProcessors = runtime.availableProcessors();
-        System.out.println("Running on a system with  " + numOfProcessors
-				+ " processors");
-		LimitedQueue<Runnable> LQ = new LimitedQueue<Runnable>(
-				2 * numOfProcessors);
-		ExecutorService executorService = new ThreadPoolExecutor((int) NR_PROCS_MULT
-				* numOfProcessors, (int) NR_PROCS_MULT * numOfProcessors, 0L,
-				TimeUnit.MILLISECONDS, LQ);
-		System.out.println("used memory before processing MFIS for minsup " + minSup + " is "
-				+ (double) ((double) GDS_NG.getMem().getActualUsed() / Math.pow(2, 30)) + " GB");
+        System.out.println("Running on a system with  " + numOfProcessors + " processors");
+        LimitedQueue<Runnable> LQ = new LimitedQueue<>(2 * numOfProcessors);
+        ExecutorService executorService = new ThreadPoolExecutor((int) NR_PROCS_MULT
+                * numOfProcessors, (int) NR_PROCS_MULT * numOfProcessors, 0L, TimeUnit.MILLISECONDS, LQ);
+        System.out.println("used memory before processing MFIS for minsup " + minSup + " is "
+                + (double) GDS_NG.getMem().getActualUsed() / Math.pow(2, 30) + " GB");
 
 		long start = System.currentTimeMillis();
-		try {
-			FISReader = new BufferedReader(new FileReader(new File(frequentItemsetFile)));
-			System.out.println("About to read MFIs from file "+ frequentItemsetFile);
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(frequentItemsetFile))) {
+            System.out.println("About to read MFIs from file "+ frequentItemsetFile);
 			String currLine = "";
 			stringBuilder.append("Size").append("\t").append("Score").append(Utilities.NEW_LINE);
 			while (currLine != null) {
 				try {
-					currLine = FISReader.readLine();
-					if (currLine == null)
-						break;
-					if (currLine.startsWith("(")) // the empty FI - ignore it
-						continue;
-					ParsedFrequentItemSet parsedFrequentItems = parseFILine(currLine);
+                    currLine = bufferedReader.readLine();
+                    if (currLine == null) {
+                        break;
+                    }
+                    if (currLine.startsWith("(")) { // the empty FI - ignore it
+                        continue;
+                    }
+                    ParsedFrequentItemSet parsedFrequentItems = parseFILine(currLine);
 					if (parsedFrequentItems.supportSize > minSup * NG_PARAM) {
 						tooLarge++;
 						continue;
 					}
 					List<Integer> currentItemSet = parsedFrequentItems.items;
-					double maxClusterScore = StringSimTools.MaxScore(
-                            parsedFrequentItems.supportSize, currentItemSet);
+                    double maxClusterScore = StringSimTools.MaxScore(parsedFrequentItems.supportSize, currentItemSet);
                     if (maxClusterScore < 0.1 * Utilities.scoreThreshold) {
 						scorePruned++;
 						continue;
@@ -449,39 +438,27 @@ public class Utilities {
 					if (numOfLines % 100000 == 0) {
 						System.out.println("Read " + numOfLines + " FIs");
 						System.out.println("queue size: " + LQ.size());
-						System.out.println("GDS_NG.memAn.getFreePercent(): "
-								+ GDS_NG.getMem().getFreePercent());
-						System.out.println("GDS_NG.memAn.getFree(): "
-								+ GDS_NG.getMem().getFree());
-						System.out.println("GDS_NG.memAn.getActualFree(): "
-								+ GDS_NG.getMem().getActualFree());
-						System.out.println("GDS_NG.memAn.getTotal(): "
-								+ GDS_NG.getMem().getTotal());
-
-						System.out.println("memory statuses");
+                        System.out.println("GDS_NG.memAn.getFreePercent(): " + GDS_NG.getMem().getFreePercent());
+                        System.out.println("GDS_NG.memAn.getFree(): " + GDS_NG.getMem().getFree());
+                        System.out.println("GDS_NG.memAn.getActualFree(): " + GDS_NG.getMem().getActualFree());
+                        System.out.println("GDS_NG.memAn.getTotal(): " + GDS_NG.getMem().getTotal());
+                        System.out.println("memory statuses");
 						System.gc();
 					}
 				} catch (Exception e) {
-					System.out.println("Exception occured while parsing line "
-							+ currLine);
-					e.printStackTrace();
+                    System.out.println("Exception occured while parsing line " + currLine);
+                    e.printStackTrace();
 				}
 			}
 
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} finally {
-			try {
-                if (FISReader != null) {
-                    FISReader.close();
-                }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
                 executorService.shutdown();
 				executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
-
-			} catch (IOException | InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
 			}
         }
 
@@ -567,8 +544,8 @@ public class Utilities {
 		System.out.println("used memory before processing MFIS for minsup "
 				+ minSup
 				+ " is "
-				+ (double) ((double) GDS_NG.getMem().getActualUsed() / Math
-						.pow(2, 30)) + " GB");
+                + (double) GDS_NG.getMem().getActualUsed() / Math
+                .pow(2, 30) + " GB");
 
 		long start = System.currentTimeMillis();
 		try {

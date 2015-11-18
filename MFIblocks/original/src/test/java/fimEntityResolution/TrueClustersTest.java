@@ -17,7 +17,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
 
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,8 +36,9 @@ public class TrueClustersTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		classUnderTest = new TrueClusters();
-		MockitoAnnotations.initMocks(this);
+        classUnderTest = Whitebox.invokeConstructor(TrueClusters.class);
+//		classUnderTest = TrueClusters.createTrueClusters();
+        MockitoAnnotations.initMocks(this);
 	}
 	
 	
@@ -63,8 +63,8 @@ public class TrueClustersTest {
 	}
 	
 	@Test
-	public void test_noSingleToneClusterAreCreated() throws IOException {
-		Logger mockedLogger = PowerMockito.mock(Logger.class);
+    public void test_noSingleToneClusterAreCreated() throws Exception {
+        Logger mockedLogger = PowerMockito.mock(Logger.class);
 		Whitebox.setInternalState(classUnderTest.getClass(), "logger", mockedLogger);
 		
 		List<String> clusterMembers = new ArrayList<>(Arrays.asList("1 2 3 4","2 5 6"));
@@ -72,9 +72,9 @@ public class TrueClustersTest {
 		PowerMock.mockStatic(Files.class);
 		EasyMock.expect(Files.readAllLines(EasyMock.anyObject(Path.class), EasyMock.anyObject(Charset.class))).andReturn(clusterMembers);
 		PowerMock.replayAll();
-		
-		classUnderTest.findClustersAssingments("");
-		Mockito.verify(mockedLogger, Mockito.never()).fatal(Mockito.anyString());
+
+        Whitebox.invokeMethod(classUnderTest, "findClustersAssignments", "");
+        Mockito.verify(mockedLogger, Mockito.never()).fatal(Mockito.anyString());
 	}
 	
 	
@@ -86,15 +86,15 @@ public class TrueClustersTest {
 		PowerMock.mockStatic(Files.class);
 		EasyMock.expect(Files.readAllLines(EasyMock.anyObject(Path.class), EasyMock.anyObject(Charset.class))).andReturn(clusterMembers);
 		PowerMock.replayAll();
-		
-		classUnderTest.findClustersAssingments("");
-		
+
+        Whitebox.invokeMethod(classUnderTest, "findClustersAssignments", "");
+
 		ConcurrentHashMap<Integer,RecordMatches> allMatches = classUnderTest.getGroundTruthCandidatePairs().getAllMatches();
 		
 		//assert cluster members of 2
 		Collection<CandidateMatch> clusterMembersRecieved = allMatches.get(2).getCandidateMatches();
-		ArrayList<Integer> clusterMembersOfTwo = new ArrayList<Integer>();
-		for (CandidateMatch candidateMatch : clusterMembersRecieved) {
+        ArrayList<Integer> clusterMembersOfTwo = new ArrayList<>();
+        for (CandidateMatch candidateMatch : clusterMembersRecieved) {
 			assertThat("True cluster assignment has a score", candidateMatch.getScore(), is(0.0));
 			clusterMembersOfTwo.add(candidateMatch.getRecordId());
 		}
@@ -102,8 +102,8 @@ public class TrueClustersTest {
 		
 		//assert cluster members of 6
 		clusterMembersRecieved = allMatches.get(6).getCandidateMatches();
-		ArrayList<Integer> clusterMembersOfSix = new ArrayList<Integer>();
-		for (CandidateMatch candidateMatch : clusterMembersRecieved) {
+        ArrayList<Integer> clusterMembersOfSix = new ArrayList<>();
+        for (CandidateMatch candidateMatch : clusterMembersRecieved) {
 			assertThat("True cluster assignment has a score", candidateMatch.getScore(), is(0.0));
 			clusterMembersOfSix.add(candidateMatch.getRecordId());
 		}

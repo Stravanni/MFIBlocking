@@ -188,8 +188,7 @@ public class BottomUp {
                 long writeBlocksDuration = timer.getActionTimeDuration();
 
                 timer.startActionTimeMeassurment();
-                TrueClusters trueClusters = new TrueClusters();
-                trueClusters.findClustersAssingments(mfiContext.getMatchFile());
+                TrueClusters trueClusters = TrueClusters.createTrueClusters(mfiContext.getMatchFile());
 
                 List<Block> trueBlocks = findBlocks(trueClusters.getGroundTruthCandidatePairs(), false, mfiContext);
 
@@ -209,7 +208,6 @@ public class BottomUp {
 				BlockingRunResult blockingRR = new BlockingRunResult(resultContext);
 				blockingRunResults.add(blockingRR);
 				
-				System.out.println("");
 				System.out.println("");
 			}
 		}

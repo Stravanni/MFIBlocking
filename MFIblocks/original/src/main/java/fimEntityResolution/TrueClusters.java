@@ -13,35 +13,40 @@ import java.util.List;
 
 public class TrueClusters {
 
-	private static final String transactionSeperator = " ";
-	private int cardinality;	
+    private static final String TRANSACTION_SEPARATOR = " ";
+    private int cardinality;
 	private CandidatePairs cps;
 	
 	static final Logger logger = Logger.getLogger(TrueClusters.class);
 
-	
-	public CandidatePairs getGroundTruthCandidatePairs(){
-		return cps;
+    public static TrueClusters createTrueClusters(String clustersFile) {
+        TrueClusters trueClusters = new TrueClusters();
+        trueClusters.findClustersAssignments(clustersFile);
+        return trueClusters;
+    }
+
+    public CandidatePairs getGroundTruthCandidatePairs() {
+        return cps;
 	}
 	
 	public int getCardinality(){
 		return cardinality;
 	}
-	
-	public TrueClusters(){
-		cps = new CandidatePairs(); //no limit
+
+    private TrueClusters() {
+        cps = new CandidatePairs(); //no limit
 		cardinality = 0;
 	}
 
-	public void findClustersAssingments(String clustersFile) {
-		try {
+    private void findClustersAssignments(String clustersFile) {
+        try {
 			List<String> lines = Files.readAllLines(Paths.get(clustersFile), Charset.defaultCharset());
 			
 			for (String line : lines) {
-				String[] transactions = line.trim().split(transactionSeperator);
-				
-				List<Integer> cluster = new ArrayList<Integer>(transactions.length);
-				for (String transaction : transactions) {
+                String[] transactions = line.trim().split(TRANSACTION_SEPARATOR);
+
+                List<Integer> cluster = new ArrayList<>(transactions.length);
+                for (String transaction : transactions) {
 					Integer transactionKey = Integer.parseInt(transaction);					
 					cluster.add(transactionKey);
 				}

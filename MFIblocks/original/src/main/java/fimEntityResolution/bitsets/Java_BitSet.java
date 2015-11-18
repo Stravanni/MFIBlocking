@@ -1,9 +1,9 @@
 package fimEntityResolution.bitsets;
 
-import il.ac.technion.ie.model.BitSetIF;
+import il.ac.technion.ie.context.MfiContext;
 import il.ac.technion.ie.data.structure.IFRecord;
-import il.ac.technion.ie.model.RecordSet;
 import il.ac.technion.ie.data.structure.SetPairIF;
+import il.ac.technion.ie.model.BitSetIF;
 
 import javax.transaction.NotSupportedException;
 import java.util.ArrayList;
@@ -66,11 +66,12 @@ public class Java_BitSet implements BitSetIF{
 
 	@Override
 	public List<IFRecord> getRecords() {
-		List<IFRecord> retVal = new ArrayList<IFRecord>(bs.cardinality());
-		for(int i=bs.nextSetBit(1); i>=0; i=bs.nextSetBit(i+1)){
-			retVal.add(RecordSet.values.get(i));
-		}
-		return retVal;
+        List<IFRecord> retVal = new ArrayList<>(bs.cardinality());
+        MfiContext mfiContext = MfiContext.getInstance();
+        for (int i = bs.nextSetBit(1); i >= 0; i = bs.nextSetBit(i + 1)) {
+            retVal.add(mfiContext.getRecordByKey(i));
+        }
+        return retVal;
 			
 	}
 	

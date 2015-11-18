@@ -1,6 +1,7 @@
 package il.ac.technion.ie.model;
 
 
+import il.ac.technion.ie.context.MfiContext;
 import il.ac.technion.ie.utils.StringSimTools;
 
 import java.io.Serializable;
@@ -99,8 +100,9 @@ public class FrequentItem implements Comparable<FrequentItem>,Serializable{
 	}
 	
 	public void setIDFWeight(){
-		log2IDF = ((double) RecordSet.DB_SIZE/getSupportSize());
-		log2IDF = StringSimTools.logBase2(log2IDF);
+        int dbSize = MfiContext.getInstance().getDBSize();
+        log2IDF = ((double) dbSize / getSupportSize());
+        log2IDF = StringSimTools.logBase2(log2IDF);
 	}
 	
 	public String toString(){

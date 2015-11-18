@@ -2,11 +2,11 @@ package il.ac.technion.ie.bitsets;
 
 import com.googlecode.javaewah.EWAHCompressedBitmap;
 import com.googlecode.javaewah.IntIterator;
+import il.ac.technion.ie.context.MfiContext;
 import il.ac.technion.ie.data.structure.IFRecord;
 import il.ac.technion.ie.data.structure.SetPairIF;
 import il.ac.technion.ie.exception.NotImplementedYetException;
 import il.ac.technion.ie.model.BitSetIF;
-import il.ac.technion.ie.model.RecordSet;
 
 import javax.transaction.NotSupportedException;
 import java.util.ArrayList;
@@ -84,8 +84,8 @@ public class EWAH_BitSet implements BitSetIF{
 		IntIterator iterator = comBS.intIterator();
 		while(iterator.hasNext()){
 			int index = iterator.next();
-			retVal.add(RecordSet.values.get(index));
-		}		
+            retVal.add(MfiContext.getInstance().getRecordByKey(index));
+        }
 		return retVal;
 	}
 	@Override

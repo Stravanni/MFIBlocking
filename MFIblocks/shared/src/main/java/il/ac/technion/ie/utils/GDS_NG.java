@@ -1,9 +1,9 @@
 package il.ac.technion.ie.utils;
 
+import il.ac.technion.ie.context.MfiContext;
 import il.ac.technion.ie.data.structure.BitMatrix;
 import il.ac.technion.ie.data.structure.DBRecord;
 import il.ac.technion.ie.data.structure.SetPairIF;
-import il.ac.technion.ie.model.RecordSet;
 import org.enerj.core.SparseBitSet.Iterator;
 import org.hyperic.sigar.Mem;
 import org.hyperic.sigar.Sigar;
@@ -45,13 +45,12 @@ public class GDS_NG implements SetPairIF {
     private BitMatrix tempStorageMatrix;
 
     public GDS_NG(double NGLimit) {
-        tempStorageMatrix = new BitMatrix(RecordSet.DB_SIZE);
-        maxNG = 0;
+        this();
         this.NGLimit = NGLimit;
     }
 
     public GDS_NG() {
-        tempStorageMatrix = new BitMatrix(RecordSet.DB_SIZE);
+        tempStorageMatrix = new BitMatrix(MfiContext.getInstance().getDBSize());
         maxNG = 0;
     }
 
@@ -120,11 +119,12 @@ public class GDS_NG implements SetPairIF {
 
     public static double FalseNegatives(BitMatrix GTMatrix, GDS_NG ActualGDS) {
         long FN = 0;
+        int dbSize = MfiContext.getInstance().getDBSize();
         Iterator It = GTMatrix.getSBS().getIterator();
         while (It.hasNext()) {
             long nextSetBit = It.next();
-            int j = (int) (nextSetBit % (long) RecordSet.DB_SIZE);
-            int i = (int) ((nextSetBit - j) / (long) RecordSet.DB_SIZE);
+            int j = (int) (nextSetBit % (long) dbSize);
+            int i = (int) ((nextSetBit - j) / (long) dbSize);
             Node nodei = ActualGDS.getNodeFromIdx(i);
             Node nodej = ActualGDS.getNodeFromIdx(j);
             boolean exists = ActualGDS.doesRelationshipExist(nodei, nodej);
@@ -276,14 +276,11 @@ public class GDS_NG implements SetPairIF {
          * 3. The matrix has at least 10000 set bits (otherwise there is no point in writing it)
          */
         if (tempStorageMatrix.numOfSet() > NUM_SET_THRESH && maxNG < NGLimit && percentegeOfFreeMem() < FREE_MEM_THRESH) {
-            //System.out.println("DEBUG: getActualFree(): " + getMem().getActualFree() + " MB");
-            //System.out.println("DEBUG: memAn.getActualUsed(): " + getMem().getActualUsed() + " MB");
-            //System.out.println("DEBUG: perfreeMem: " + percentegeOfFreeMem());
-            //first time writing to DB
             writeToDB(tempStorageMatrix);
             tempStorageMatrix = null;
             Runtime.getRuntime().gc();
-            tempStorageMatrix = new BitMatrix(RecordSet.DB_SIZE);
+
+            tempStorageMatrix = new BitMatrix(MfiContext.getInstance().getDBSize());
         }
 
     }

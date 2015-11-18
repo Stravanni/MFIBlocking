@@ -446,7 +446,7 @@ public class StringSimTools {
 			}
 			nominator += termScore; //"rough - as in - assume term appears only once in a record
 		}
-        int minRecordSize = MfiContext.getInstance().getMinRecordSize();
+        int minRecordSize = MfiContext.getInstance().getMinRecordLength();
         double denominator = recordsSize * minRecordSize * minTermScore;
         return (nominator/denominator);
 	}

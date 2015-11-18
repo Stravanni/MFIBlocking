@@ -1,23 +1,23 @@
 package il.ac.technion.ie.model;
 
-import au.com.bytecode.opencsv.CSVReader;
 import il.ac.technion.ie.context.MfiContext;
 import org.apache.commons.lang.StringUtils;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
 public class RecordSet {
     private Map<Integer, MfiRecord> values;
-    private String[][] originalRecords;
-    private String[] columnNames;
     private int numberOfRecords;
 
     private int minRecordLength = Integer.MAX_VALUE;
 
-    private int SCHEMA_SIZE;
+    private int dbSize;
 
     private RecordSet() {
     }
@@ -26,35 +26,6 @@ public class RecordSet {
         RecordSet recordSet = new RecordSet();
         recordSet.readRecords(mfiContext);
         return recordSet;
-    }
-
-    /*public  void setRecords(Map<Integer, MfiRecord> records) {
-        values = records;
-        numberOfRecords = values.size();
-    }*/
-
-
-    public void loadOriginalRecordsFromCSV(String filename) throws IOException {
-        originalRecords = new String[numberOfRecords][SCHEMA_SIZE];
-        CSVReader cvsReader;
-
-        cvsReader = new CSVReader(new FileReader(new File(filename)));
-
-        String[] currLine;
-        int recordId = 1;
-        boolean first = true;
-        String[] attNames = null;
-        while ((currLine = cvsReader.readNext()) != null) {
-            if (first) {
-                attNames = currLine;
-                first = false;
-                continue;
-            }
-            SCHEMA_SIZE = attNames.length;
-            originalRecords[recordId - 1] = currLine;
-            recordId++;
-        }
-        columnNames = attNames;
     }
 
     public void readRecords(MfiContext context) {
@@ -110,13 +81,12 @@ public class RecordSet {
             }
             recordsFileReader.close();
             System.out.println("Num of records read: " + values.size());
-//            DB_SIZE = values.size();
+            dbSize = values.size();
             numberOfRecords = values.size();
 
         } catch (IOException e) {
             e.printStackTrace();
         }
-//        this.setRecords(values);
         System.out.println("number Of Records is: " + numberOfRecords);
     }
 
@@ -131,5 +101,17 @@ public class RecordSet {
 
     public int getMinRecordLength() {
         return minRecordLength;
+    }
+
+    public void setMinRecordLength(int minRecordLength) {
+        this.minRecordLength = minRecordLength;
+    }
+
+    public void setDBSize(int dbSize) {
+        this.dbSize = dbSize;
+    }
+
+    public int getDBSize() {
+        return this.dbSize;
     }
 }

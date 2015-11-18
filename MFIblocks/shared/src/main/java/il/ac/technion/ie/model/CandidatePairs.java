@@ -1,6 +1,7 @@
 package il.ac.technion.ie.model;
 
 
+import il.ac.technion.ie.context.MfiContext;
 import il.ac.technion.ie.data.structure.BitMatrix;
 import il.ac.technion.ie.data.structure.SetPairIF;
 import il.ac.technion.ie.utils.Utilities;
@@ -160,8 +161,9 @@ public class CandidatePairs implements SetPairIF {
 		long start = System.currentTimeMillis();
 
 		removeBelowThresh();
-		BitMatrix bm = new BitMatrix(RecordSet.DB_SIZE);
-		for (Entry<Integer, RecordMatches> entry: allMatches.entrySet()) {
+        int dbSize = MfiContext.getInstance().getDBSize();
+        BitMatrix bm = new BitMatrix(dbSize);
+        for (Entry<Integer, RecordMatches> entry: allMatches.entrySet()) {
 			for(CandidateMatch cm: entry.getValue().getCandidateMatches()){
 				bm.setPair(entry.getKey(), cm.getRecordId());
 			}

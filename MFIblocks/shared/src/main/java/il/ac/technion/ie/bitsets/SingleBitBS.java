@@ -1,9 +1,9 @@
 package il.ac.technion.ie.bitsets;
 
-import il.ac.technion.ie.model.BitSetIF;
+import il.ac.technion.ie.context.MfiContext;
 import il.ac.technion.ie.data.structure.IFRecord;
-import il.ac.technion.ie.model.RecordSet;
 import il.ac.technion.ie.data.structure.SetPairIF;
+import il.ac.technion.ie.model.BitSetIF;
 
 import javax.transaction.NotSupportedException;
 import java.util.Collections;
@@ -78,8 +78,8 @@ public class SingleBitBS implements BitSetIF{
 
 	@Override
 	public List<IFRecord> getRecords() {
-		IFRecord rec = RecordSet.values.get(index);
-		return Collections.singletonList(rec);
+        IFRecord rec = MfiContext.getInstance().getRecordByKey(index);
+        return Collections.singletonList(rec);
 	}
 
 	public int markPairs(SetPairIF spf, double score) {

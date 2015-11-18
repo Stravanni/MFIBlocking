@@ -1,9 +1,9 @@
 package fimEntityResolution;
 
-import il.ac.technion.ie.utils.ClearerFactory;
+import il.ac.technion.ie.context.MfiContext;
 import il.ac.technion.ie.data.structure.BitMatrix;
 import il.ac.technion.ie.data.structure.Clearer;
-import il.ac.technion.ie.model.RecordSet;
+import il.ac.technion.ie.utils.ClearerFactory;
 
 public class BitMatrixFactory implements ClearerFactory{
 
@@ -24,7 +24,7 @@ public class BitMatrixFactory implements ClearerFactory{
 	
 	@Override
 	public Clearer createInstance() {
-        Clearer clearer = new BitMatrix(RecordSet.DB_SIZE);
+        Clearer clearer = new BitMatrix(MfiContext.getInstance().getDBSize());
         return clearer;
     }
 

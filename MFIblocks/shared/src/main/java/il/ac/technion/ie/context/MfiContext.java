@@ -28,6 +28,7 @@ public class MfiContext {
     private String originalRecordsPath;
     private String datasetName;
     private RecordSet recordSet;
+    private Object DBSize;
 
     public static MfiContext getInstance() {
         if (instance == null) {
@@ -219,8 +220,20 @@ public class MfiContext {
         return recordSet.getRecordByKey(key);
     }
 
-    public int getMinRecordSize() {
+    public int getMinRecordLength() {
         return recordSet.getMinRecordLength();
+    }
+
+    public void setMinRecordLength(int minRecordLength) {
+        recordSet.setMinRecordLength(minRecordLength);
+    }
+
+    public void setDBSize(int size) {
+        recordSet.setDBSize(size);
+    }
+
+    public int getDBSize() {
+        return recordSet.getDBSize();
     }
 
     /*public RecordSet getRecordSet() {

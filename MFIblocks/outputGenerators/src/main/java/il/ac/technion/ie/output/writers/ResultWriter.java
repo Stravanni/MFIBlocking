@@ -3,10 +3,7 @@ package il.ac.technion.ie.output.writers;
 
 import au.com.bytecode.opencsv.CSVWriter;
 import il.ac.technion.ie.context.MfiContext;
-import il.ac.technion.ie.model.Block;
-import il.ac.technion.ie.model.CandidatePairs;
-import il.ac.technion.ie.model.RecordMatches;
-import il.ac.technion.ie.model.RecordSet;
+import il.ac.technion.ie.model.*;
 import il.ac.technion.ie.output.strategy.block.BlockFormat;
 
 import java.io.BufferedWriter;
@@ -92,10 +89,11 @@ public class ResultWriter {
             csvWriter.close();
             return;
         }
-        RecordSet.loadOriginalRecordsFromCSV(context.getOriginalRecordsPath());
+        RecordSet recordSet = RecordSet.factory(context);
+        DatasetInfo datasetInfo = DatasetInfo.createDatasetInfo(context.getOriginalRecordsPath());
 
         Iterator<Entry<Integer, RecordMatches>> iterator = allMatches.entrySet().iterator();
-        csvWriter.writeNext(RecordSet.columnNames);
+        csvWriter.writeNext(datasetInfo.getColumnNames());
         while (iterator.hasNext()) {
 
             Map.Entry<Integer, RecordMatches> entry = iterator.next();
@@ -105,23 +103,23 @@ public class ResultWriter {
 
             List<Integer> columnsForBlock = new ArrayList<>();
             columnsForBlock.addAll(cps.getColumnsSupport(entry.getKey()));
-            if (RecordSet.SCHEMA_SIZE < 5) {
-                writeInOneCell(csvWriter, entry, columnsForBlock);
+            if (datasetInfo.getNumberOfColumns() < 5) {
+                writeInOneCell(csvWriter, entry, columnsForBlock, datasetInfo);
             } else {
-                writeInManyCells(csvWriter, entry, columnsForBlock);
+                writeInManyCells(csvWriter, entry, columnsForBlock, datasetInfo);
             }
 
             for (Integer id : entry.getValue().getCandidateSet().keySet()) {
-                csvWriter.writeNext(RecordSet.originalRecords[id - 1]);
+                csvWriter.writeNext(datasetInfo.getRecordByIndex(id - 1));
             }
             //ad the record itself
-            csvWriter.writeNext(RecordSet.originalRecords[entry.getKey() - 1]);
+            csvWriter.writeNext(datasetInfo.getRecordByIndex(entry.getKey() - 1));
         }
         csvWriter.close();
     }
 
-    private void writeInManyCells(CSVWriter csvWriter, Entry<Integer, RecordMatches> entry, List<Integer> columnsForBlock) {
-        String[] csvLine = new String[RecordSet.SCHEMA_SIZE];
+    private void writeInManyCells(CSVWriter csvWriter, Entry<Integer, RecordMatches> entry, List<Integer> columnsForBlock, DatasetInfo datasetInfo) {
+        String[] csvLine = new String[datasetInfo.getNumberOfColumns()];
         StringBuilder stringBuilder = new StringBuilder();
         //adds ID of current record
         writeRootRecordID(stringBuilder, entry);
@@ -139,29 +137,28 @@ public class ResultWriter {
 
         stringBuilder = new StringBuilder();
         //fill the attributes:
-        writeNeighbors(stringBuilder, columnsForBlock);
+        writeNeighbors(stringBuilder, columnsForBlock, datasetInfo);
         csvLine[3] = stringBuilder.toString();
         //fill the rest of the line with spaces
-        for (int i = 4; i < RecordSet.SCHEMA_SIZE; i++) {
+        for (int i = 4; i < datasetInfo.getNumberOfColumns(); i++) {
             csvLine[i] = " ";
         }
         csvWriter.writeNext(csvLine);
     }
 
-    private void writeInOneCell(CSVWriter csvWriter, Entry<Integer, RecordMatches> entry, List<Integer> columnsForBlock) {
+    private void writeInOneCell(CSVWriter csvWriter, Entry<Integer, RecordMatches> entry, List<Integer> columnsForBlock, DatasetInfo datasetInfo) {
         StringBuilder stringBuilder = new StringBuilder();
         writeRootRecordID(stringBuilder, entry);
         writeNumberOfNeighbors(stringBuilder, entry);
         stringBuilder.append(" Used Attributes: ");
-        writeNeighbors(stringBuilder, columnsForBlock);
+        writeNeighbors(stringBuilder, columnsForBlock, datasetInfo);
         csvWriter.writeNext(stringBuilder.toString());
     }
 
-    private void writeNeighbors(StringBuilder stringBuilder, List<Integer> columnsForBlock) {
+    private void writeNeighbors(StringBuilder stringBuilder, List<Integer> columnsForBlock, DatasetInfo datasetInfo) {
         Collections.sort(columnsForBlock);
         for (int id : columnsForBlock) {
-            stringBuilder.append(RecordSet.columnNames[id]);
-            stringBuilder.append(" | ");
+            stringBuilder.append(datasetInfo.getRecordByIndex(id)).append(" | ");
         }
         stringBuilder.delete(stringBuilder.lastIndexOf(" | "), stringBuilder.length());
     }

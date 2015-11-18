@@ -1,11 +1,11 @@
 package fimEntityResolution.bitsets;
 
 
-import il.ac.technion.ie.model.BitSetIF;
+import il.ac.technion.ie.context.MfiContext;
 import il.ac.technion.ie.data.structure.BitMatrix;
 import il.ac.technion.ie.data.structure.IFRecord;
-import il.ac.technion.ie.model.RecordSet;
 import il.ac.technion.ie.data.structure.SetPairIF;
+import il.ac.technion.ie.model.BitSetIF;
 import org.enerj.core.SparseBitSet;
 import org.enerj.core.SparseBitSet.Iterator;
 
@@ -28,8 +28,8 @@ public class SBS_BitSet implements BitSetIF{
 	
 	
 	public SBS_BitSet(){
-		int size = SizeForSBSImp(RecordSet.DB_SIZE);
-		sbs = new SparseBitSet(size);
+        int size = SizeForSBSImp(MfiContext.getInstance().getDBSize());
+        sbs = new SparseBitSet(size);
 		cardinality = 0;
 	}
 	
@@ -109,9 +109,10 @@ public class SBS_BitSet implements BitSetIF{
 	@Override
 	public synchronized List<IFRecord> getRecords() {		
 		List<IFRecord> retVal = new ArrayList<IFRecord>(this.getCardinality());
-		for(long i=getNextSetBitIndex(0); i >= 0; i=getNextSetBitIndex(i+1)) {
-			retVal.add(RecordSet.values.get((int)i));
-		}
+        MfiContext mfiContext = MfiContext.getInstance();
+        for (long i = getNextSetBitIndex(0); i >= 0; i = getNextSetBitIndex(i + 1)) {
+            retVal.add(mfiContext.getRecordByKey((int) i));
+        }
 		if(retVal.size() == 0){
 			System.out.println("inside getRecords: cardinality: " + this.getCardinality() + " retVal.size(): " + retVal.size());
 		}

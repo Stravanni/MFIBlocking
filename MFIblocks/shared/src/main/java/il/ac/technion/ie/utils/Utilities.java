@@ -5,6 +5,7 @@ import com.googlecode.javaewah.IntIterator;
 import il.ac.technion.ie.bitsets.EWAH_BitSet;
 import il.ac.technion.ie.bitsets.EWAH_BitSet_Factory;
 import il.ac.technion.ie.bitsets.SingleBSFactory;
+import il.ac.technion.ie.context.MfiContext;
 import il.ac.technion.ie.data.structure.*;
 import il.ac.technion.ie.model.*;
 import il.ac.technion.ie.pools.BitMatrixPool;
@@ -114,35 +115,36 @@ public class Utilities {
 
 			String numericLine = "";
 			String recordLine = "";
-			Pattern ws = Pattern.compile("[\\s]+");
-			int recordIndex = 1;
-			while (numericLine != null) {
-				try {
-					numericLine = recordsFileReader.readLine();
-					if (numericLine == null) {
-						break;
-					}
-					numericLine = numericLine.trim();
-					recordLine = origRecordsFileReader.readLine().trim();
-					String src = null;
-					if (srcFileReader != null) {
-						src = srcFileReader.readLine().trim();
-					}
+            Pattern ws = Pattern.compile("[\\s]+");
+            int recordIndex = 1;
+            MfiContext mfiContext = MfiContext.getInstance();
+            while (numericLine != null) {
+                try {
+                    numericLine = recordsFileReader.readLine();
+                    if (numericLine == null) {
+                        break;
+                    }
+                    numericLine = numericLine.trim();
+                    recordLine = origRecordsFileReader.readLine().trim();
+                    String src = null;
+                    if (srcFileReader != null) {
+                        src = srcFileReader.readLine().trim();
+                    }
 
-					DBRecord r = new DBRecord(recordIndex, recordLine);
-					r.setSrc(src); // in the worst case this is null
-					String[] words = ws.split(numericLine);
-					if (numericLine.length() > 0) { // very special case when
-						// there is an empty line
-						for (String word : words) {
-							int item = Integer.parseInt(word);
-							r.addItem(item);
-						}
-					}
-					RecordSet.minRecordLength = (r.getSize() < RecordSet.minRecordLength) ? r
-							.getSize() : RecordSet.minRecordLength;
-							recordIndex++;
-				} catch (Exception e) {
+                    DBRecord r = new DBRecord(recordIndex, recordLine);
+                    r.setSrc(src); // in the worst case this is null
+                    String[] words = ws.split(numericLine);
+                    if (numericLine.length() > 0) { // very special case when
+                        // there is an empty line
+                        for (String word : words) {
+                            int item = Integer.parseInt(word);
+                            r.addItem(item);
+                        }
+                    }
+                    int minRecordLength = Math.min(r.getSize(), mfiContext.getMinRecordLength());
+                    mfiContext.setMinRecordLength(minRecordLength);
+                    recordIndex++;
+                } catch (Exception e) {
 					System.out.println("Exception while reading line "
 							+ recordIndex + ":" + numericLine);
 					System.out.println(e);
@@ -153,7 +155,8 @@ public class Utilities {
 			recordsFileReader.close();
 			System.out.println("Num of records read: " + (recordIndex - 1));
 			tx.success();
-			RecordSet.DB_SIZE = recordIndex - 1;
+
+            mfiContext.setDBSize(recordIndex - 1);
 
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -237,19 +240,6 @@ public class Utilities {
 
     private static Pattern getLexiconFilePatern(String printBlocksFormat) {
         return Pattern.compile(lexiconItemExpression);
-
-        /*
-        The entire block is probably related to the way the lexicon file is build.
-        As long as using Batya's way to build it that login is not needed
-        */
-        /*Pattern lexiconPattern;
-        if ("N".equalsIgnoreCase(printBlocksFormat) ){
-            lexiconPattern = Pattern.compile(lexiconItemExpression);
-        }
-        else{
-            lexiconPattern = Pattern.compile(lexiconItemExpressionExtended);
-}
-        return lexiconPattern;*/
     }
 
     private static int[] getSortedSupportArr(String[] supportStrings) {
@@ -447,8 +437,8 @@ public class Utilities {
 					}
 					List<Integer> currentItemSet = parsedFrequentItems.items;
 					double maxClusterScore = StringSimTools.MaxScore(
-							parsedFrequentItems.supportSize, currentItemSet, RecordSet.minRecordLength);
-					if (maxClusterScore < 0.1 * Utilities.scoreThreshold) {
+                            parsedFrequentItems.supportSize, currentItemSet);
+                    if (maxClusterScore < 0.1 * Utilities.scoreThreshold) {
 						scorePruned++;
 						continue;
 					}
@@ -603,8 +593,8 @@ public class Utilities {
 					}
 					List<Integer> currIS = pfi.items;
 					double maxClusterScore = StringSimTools.MaxScore(
-							pfi.supportSize, currIS, RecordSet.minRecordLength);
-					if (maxClusterScore < 0.1 * Utilities.scoreThreshold) {
+                            pfi.supportSize, currIS);
+                    if (maxClusterScore < 0.1 * Utilities.scoreThreshold) {
 						scorePruned++;
 						continue;
 					}
@@ -727,31 +717,34 @@ public class Utilities {
         List<MfiRecord> retVal = new ArrayList<MfiRecord>(size);
         Iterator It = support.getIterator();
 
-		while (It.hasNext()) {
-			int recordId = new Long(It.next()).intValue();
-			retVal.add(RecordSet.values.get(recordId));
-		}
+        MfiContext mfiContext = MfiContext.getInstance();
+        while (It.hasNext()) {
+            int recordId = new Long(It.next()).intValue();
+            retVal.add(mfiContext.getRecordByKey(recordId));
+        }
 		return retVal;
 
 	}
 
     public static List<MfiRecord> getRecords(BitSet support) {
-        List<MfiRecord> retVal = new ArrayList<MfiRecord>(support.cardinality());
-        for (int i = support.nextSetBit(0); i >= 0; i = support
-				.nextSetBit(i + 1)) {
-			retVal.add(RecordSet.values.get(i));
-		}
+        List<MfiRecord> retVal = new ArrayList<>(support.cardinality());
+        MfiContext mfiContext = MfiContext.getInstance();
+        for (int i = support.nextSetBit(0); i >= 0; i = support.nextSetBit(i + 1)) {
+            retVal.add(mfiContext.getRecordByKey(i));
+        }
 
 		return retVal;
 	}
 
 	public static List<IFRecord> getRecords(EWAHCompressedBitmap support) {
-		List<IFRecord> retVal = new ArrayList<IFRecord>(support.cardinality());
-		IntIterator iterator = support.intIterator();
-		while (iterator.hasNext()) {
+        List<IFRecord> retVal = new ArrayList<>(support.cardinality());
+        MfiContext mfiContext = MfiContext.getInstance();
+
+        IntIterator iterator = support.intIterator();
+        while (iterator.hasNext()) {
 			int index = iterator.next();
-			retVal.add(RecordSet.values.get(index));
-		}
+            retVal.add(mfiContext.getRecordByKey(index));
+        }
 		if (support.cardinality() != retVal.size()) {
 			System.out
 			.println("getRecords: support.cardinality()="
@@ -916,12 +909,12 @@ public class Utilities {
         System.out.println(experimentTitle);
 		float TP = 0, TN = 0, FN = 0, FP = 0;
 		System.out.println("False Positives:");
-		Set<Pair> actualPairs = new HashSet<Pair>(); // for later use
-		double maxScoreForFP = 0;
+        Set<Pair> actualPairs = new HashSet<>(); // for later use
+        double maxScoreForFP = 0;
 		double minScoreForFN = 1;
-		for (Map.Entry<Integer, Set<Pair>> currClusterEntry : actualDupPairs
-				.entrySet()) {
-			Set<Pair> clusterPairs = currClusterEntry.getValue();
+        MfiContext mfiContext = MfiContext.getInstance();
+        for (Map.Entry<Integer, Set<Pair>> currClusterEntry : actualDupPairs.entrySet()) {
+            Set<Pair> clusterPairs = currClusterEntry.getValue();
 			for (Pair clusterPair : clusterPairs) {
 				if (trueDupPairs.contains(clusterPair)) {
 					TP++;
@@ -929,12 +922,11 @@ public class Utilities {
 					FP++;
 					if (WRITE_ALL_ERRORS) {
 						System.out.println("Wrong pair: ");
-						System.out.println(printRecordCluster(clusterPair,
-								records));
-						maxScoreForFP = Math.max(maxScoreForFP, StringSimTools
-								.softTFIDF(RecordSet.values.get(clusterPair.r1),
-										RecordSet.values.get(clusterPair.r2)));
-					}
+                        System.out.println(printRecordCluster(clusterPair, records));
+                        double softTFIDF = StringSimTools.softTFIDF(mfiContext.getRecordByKey(clusterPair.r1),
+                                mfiContext.getRecordByKey(clusterPair.r2));
+                        maxScoreForFP = Math.max(maxScoreForFP, softTFIDF);
+                    }
 				}
 			}
 			actualPairs.addAll(clusterPairs);
@@ -945,17 +937,15 @@ public class Utilities {
 				FN++;
 				if (WRITE_ALL_ERRORS) {
 					System.out.println("missed cluster: ");
-					if (RecordSet.values.get(truePair.r1) == null
-							|| RecordSet.values.get(truePair.r2) == null) {
-						System.out.println("Record " + truePair.r1 + " or "
-								+ truePair.r2 + " doesn;t exist");
-					}
+                    if (mfiContext.getRecordByKey(truePair.r1) == null || mfiContext.getRecordByKey(truePair.r2) == null) {
+                        System.out.println("Record " + truePair.r1 + " or " + truePair.r2 + " doesn;t exist");
+                    }
 					System.out.println(printRecordCluster(truePair, records));
 				}
-				minScoreForFN = Math.min(minScoreForFN, StringSimTools
-						.softTFIDF(RecordSet.values.get(truePair.r1),
-								RecordSet.values.get(truePair.r2)));
-			} else {
+                double softTFIDF = StringSimTools.softTFIDF(mfiContext.getRecordByKey(truePair.r1),
+                        mfiContext.getRecordByKey(truePair.r2));
+                minScoreForFN = Math.min(minScoreForFN, softTFIDF);
+            } else {
 				TN++;
 			}
 		}

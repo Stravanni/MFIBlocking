@@ -6,7 +6,6 @@ import il.ac.technion.ie.pools.BitMatrixPool;
 import il.ac.technion.ie.model.CandidatePairs;
 import il.ac.technion.ie.data.structure.IFRecord;
 import il.ac.technion.ie.context.MfiContext;
-import il.ac.technion.ie.model.RecordSet;
 import il.ac.technion.ie.spark.SparkContextWrapper;
 import il.ac.technion.ie.utils.FrequentItemsetContext;
 import il.ac.technion.ie.utils.StringSimTools;
@@ -132,8 +131,8 @@ public class SparkBlocksReader {
 
 			// 3.2 ClusterJaccard score
 			List<Integer> currentItemSet = candidateBlock.items;
-			double maxClusterScore = StringSimTools.MaxScore(candidateBlock.supportSize, currentItemSet, RecordSet.minRecordLength);
-			if (maxClusterScore < 0.1 * scoreThreshold) {
+            double maxClusterScore = StringSimTools.MaxScore(candidateBlock.supportSize, currentItemSet);
+            if (maxClusterScore < 0.1 * scoreThreshold) {
 				//scorePruned++;
 				return new Tuple2<CandidateBlock, Double>(candidateBlock, -200.0);
 			}

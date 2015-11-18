@@ -7,6 +7,7 @@ import fimEntityResolution.entityResulution.IComparison;
 import fimEntityResolution.statistics.*;
 import fimEntityResolution.statistics.Timer;
 import il.ac.technion.ie.context.MfiContext;
+import il.ac.technion.ie.context.MfiResult;
 import il.ac.technion.ie.data.structure.BitMatrix;
 import il.ac.technion.ie.model.*;
 import il.ac.technion.ie.output.writers.Writer;
@@ -149,8 +150,9 @@ public class BottomUp {
 	 * Core of the MFIBlocks algorithm
      * @param mfiContext
      */
-    public static void mfiBlocksCore(MfiContext mfiContext) {
+    public static List<MfiResult> mfiBlocksCore(MfiContext mfiContext) {
 
+        List<MfiResult> mfiResults = new ArrayList<>();
         int recordsSize = mfiContext.getRecordsSize();
         System.out.println("order of minsups used: " + Arrays.toString(mfiContext.getMinSup()));
         List<BlockingRunResult> blockingRunResults = new ArrayList<>();
@@ -209,7 +211,9 @@ public class BottomUp {
 				blockingRunResults.add(blockingRR);
 				
 				System.out.println("");
-			}
+
+                mfiResults.add(new MfiResult(algorithmBlocks, trueBlocks));
+            }
 		}
 			
 		if(!blockingRunResults.isEmpty()){
@@ -220,8 +224,9 @@ public class BottomUp {
 		}
 		else{
 			System.out.println("Under current configuration, no clustering were achieved!!");
-		}		
-	}
+        }
+        return mfiResults;
+    }
 
     private static Map<Integer, List<BlockDescriptor>> findBlocksAmbiguousRepresentatives(List<Block> algorithmBlocks, MfiContext context) {
         iBlockService blockService = new BlockService();

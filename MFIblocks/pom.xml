@@ -30,6 +30,7 @@
        <module>potential</module>
        <module>outputGenerators</module>
        <module>experiments</module>
+       <module>dataset.prepare</module>
    </modules>
   
   <build>

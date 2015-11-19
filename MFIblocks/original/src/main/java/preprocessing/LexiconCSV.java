@@ -16,7 +16,7 @@ import java.util.Properties;
 import java.util.Map.Entry;
 
 import il.ac.technion.ie.model.FrequentItem;
-import fimEntityResolution.bitsets.SBS_BitSet_Factory;
+import il.ac.technion.ie.bitsets.SBS_BitSet_Factory;
 
 public class LexiconCSV {
 

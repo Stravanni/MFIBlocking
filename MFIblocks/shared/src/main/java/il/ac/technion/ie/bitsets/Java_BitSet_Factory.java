@@ -1,4 +1,4 @@
-package fimEntityResolution.bitsets;
+package il.ac.technion.ie.bitsets;
 
 import il.ac.technion.ie.model.BitSetFactory;
 import il.ac.technion.ie.model.BitSetIF;

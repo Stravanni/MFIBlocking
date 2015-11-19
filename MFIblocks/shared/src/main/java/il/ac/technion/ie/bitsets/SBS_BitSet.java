@@ -1,4 +1,4 @@
-package fimEntityResolution.bitsets;
+package il.ac.technion.ie.bitsets;
 
 
 import il.ac.technion.ie.context.MfiContext;
@@ -14,8 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-public class SBS_BitSet implements BitSetIF{	 
-	/**
+public class SBS_BitSet implements BitSetIF {
+    /**
 	 * 
 	 */
 	private static final long serialVersionUID = 5342431995617151960L;
@@ -25,15 +25,15 @@ public class SBS_BitSet implements BitSetIF{
 	private static int SizeForSBSImp(long n){		
 		return (int) (Math.ceil((Math.cbrt(n/64.0))));
 	}
-	
-	
-	public SBS_BitSet(){
+
+
+    public SBS_BitSet(){
         int size = SizeForSBSImp(MfiContext.getInstance().getDBSize());
         sbs = new SparseBitSet(size);
 		cardinality = 0;
 	}
-	
-	public SBS_BitSet(final int size){
+
+    public SBS_BitSet(final int size){
 		sbs = new SparseBitSet(SizeForSBSImp(size));
 		cardinality = 0;
 	}

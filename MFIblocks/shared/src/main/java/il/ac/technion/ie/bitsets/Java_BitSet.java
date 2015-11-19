@@ -1,4 +1,4 @@
-package fimEntityResolution.bitsets;
+package il.ac.technion.ie.bitsets;
 
 import il.ac.technion.ie.context.MfiContext;
 import il.ac.technion.ie.data.structure.IFRecord;
@@ -11,7 +11,7 @@ import java.util.BitSet;
 import java.util.List;
 
 
-public class Java_BitSet implements BitSetIF{
+public class Java_BitSet implements BitSetIF {
 
 	/**
 	 * 

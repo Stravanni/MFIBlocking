@@ -1,10 +1,10 @@
-package fimEntityResolution.bitsets;
+package il.ac.technion.ie.bitsets;
 
 import il.ac.technion.ie.model.BitSetFactory;
 import il.ac.technion.ie.model.BitSetIF;
 
-public class SBS_BitSet_Factory implements BitSetFactory{
-	/**
+public class SBS_BitSet_Factory implements BitSetFactory {
+    /**
 	 * 
 	 */
 	private static final long serialVersionUID = -7728625456113494341L;

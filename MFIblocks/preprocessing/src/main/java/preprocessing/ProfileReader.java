@@ -1,47 +1,26 @@
 package preprocessing;
 
 
-import il.ac.technion.ie.utils.SerializationUtilities;
-
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-
 import DataStructures.Attribute;
 import DataStructures.EntityProfile;
 import DataStructures.IdDuplicates;
+import il.ac.technion.ie.utils.SerializationUtilities;
+
+import java.io.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class ProfileReader {
-	//private static final String CLUSTER_ATT_NAME = "class";
-	//private static final String SOURCE_ATT_NAME = "source";
-	//private static Map<String,List<Integer>> matches;
 	private static Lexicon lexicon;
 	private static String stopWordsFile;
 	private static WordProcessor wordProcessor;	
-	//public static int DB_Size;
 	public static HashSet<IdDuplicates> groundTruth;
 	public static ArrayList<EntityProfile>[] entityProfiles;
 	public static SortedSet<String> attributeNames;
 	public static Map<String, Integer> map;
 	public static int[] denseCounter;
 	public static Set<ComparableColumnsDensity> sortedDensity;
-	//JS :CONSTs:
 	public static final String COMMA=",";
 	public static final String DEFAULT_COLUMN_WIEGHT="0.1"; //for DS_Weights file
 	public static final String PREFIX_LENGTH="30";   //for DS_Weights file
@@ -49,7 +28,6 @@ public class ProfileReader {
 	public static boolean IS_DBPedia=false;
 	public static String MOVIES_DS_FILE=null; //"DS_weights_movies.properties";
 	public static DBSize dbSize;
-	//BufferWriters
 	private static BufferedWriter numericOutputWriter;
 	private static BufferedWriter stringOutputWriter;
 	private static BufferedWriter matchWriter;	
@@ -91,10 +69,7 @@ public class ProfileReader {
 	 * @throws IOException
 	 */
 	public static void main(String[] args) throws IOException{
-		Runtime runtime = Runtime.getRuntime();
-		runtime.gc();
 		long globalStart = System.currentTimeMillis();
-		long start = System.currentTimeMillis();
 		DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
 		Date date = new Date();
 		System.out.println("Started on : " + dateFormat.format(date));	
@@ -109,8 +84,8 @@ public class ProfileReader {
 		int n_gramsParam = Integer.parseInt(args[7]);	
 		double idfThreshParam = Double.parseDouble(args[8]);
 		String sourceMapFilePath = (args.length > 9 ? args[9] : null);
-		start = System.currentTimeMillis();
-		//loading data
+        long start = System.currentTimeMillis();
+        //loading data
 		
 		entityProfiles=new ArrayList[inputFiles.length];
 		dbSize=new DBSize(inputFiles.length);
